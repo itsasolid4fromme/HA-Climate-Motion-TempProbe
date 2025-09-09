@@ -1,0 +1,76 @@
+alias: HVAC - Motion + Outdoor Temp Control - Shed
+triggers:
+  - entity_id:
+      - binary_sensor.shed_eye_shed_motion
+    from: "off"
+    to: "on"
+    trigger: state
+  - entity_id:
+      - binary_sensor.shed_eye_shed_motion
+    to: "off"
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    trigger: state
+  - entity_id:
+      - sensor.thermo_hygrometer_20be08_h5074_tempc
+    below: 59.5
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+      milliseconds: 0
+    trigger: numeric_state
+  - entity_id:
+      - sensor.thermo_hygrometer_20be08_h5074_tempc
+    above: 71.5
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+      milliseconds: 0
+    trigger: numeric_state
+actions:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.thermo_hygrometer_20be08_h5074_tempc
+            below: 60
+        sequence:
+          - target:
+              device_id: dd062754888a7df2c0ba4d4db5606169
+            data:
+              hvac_mode: heat
+            action: climate.set_hvac_mode
+          - target:
+              device_id: dd062754888a7df2c0ba4d4db5606169
+            data:
+              temperature: |
+                {% if is_state('binary_sensor.camper_motion','on') %}
+                  67
+                {% else %}
+                  61
+                {% endif %}
+            action: climate.set_temperature
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.thermo_hygrometer_20be08_h5074_tempc
+            above: 71
+        sequence:
+          - target:
+              device_id: dd062754888a7df2c0ba4d4db5606169
+            data:
+              hvac_mode: cool
+            action: climate.set_hvac_mode
+          - target:
+              device_id: dd062754888a7df2c0ba4d4db5606169
+            data:
+              temperature: |
+                {% if is_state('binary_sensor.camper_motion','on') %}
+                  74
+                {% else %}
+                  77
+                {% endif %}
+            action: climate.set_temperature
+mode: restart
