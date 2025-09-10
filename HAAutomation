@@ -1,0 +1,111 @@
+alias: HVAC - Outdoor Temp + Motion (Comfort/Eco with Resume) - Shed - Active
+description: HVAC - Motion + Outdoor Temp Control - Shed - Active
+triggers:
+  - id: heat_temp
+    entity_id: sensor.thermo_hygrometer_20be08_h5074_tempc
+    below: 60
+    trigger: numeric_state
+  - id: cool_temp
+    entity_id: sensor.thermo_hygrometer_20be08_h5074_tempc
+    above: 71
+    trigger: numeric_state
+  - id: no_motion_10m
+    entity_id:
+      - binary_sensor.shed_eye_shed_motion
+    to: "off"
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    trigger: state
+  - id: motion_on
+    entity_id: binary_sensor.shed_eye_shed_motion
+    to: "on"
+    trigger: state
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: heat_temp
+        sequence:
+          - target:
+              entity_id: climate.air_conditioner_fa07fa_air_conditioner
+            data:
+              hvac_mode: heat
+            action: climate.set_hvac_mode
+          - target:
+              entity_id: climate.air_conditioner_fa07fa_air_conditioner
+            data:
+              temperature: 66
+            action: climate.set_temperature
+      - conditions:
+          - condition: trigger
+            id: cool_temp
+        sequence:
+          - target:
+              entity_id: climate.air_conditioner_fa07fa_air_conditioner
+            data:
+              hvac_mode: cool
+            action: climate.set_hvac_mode
+          - target:
+              entity_id: climate.air_conditioner_fa07fa_air_conditioner
+            data:
+              temperature: 74
+            action: climate.set_temperature
+      - conditions:
+          - condition: trigger
+            id: no_motion_10m
+        sequence:
+          - if:
+              - condition: state
+                entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                state: heat
+            then:
+              - target:
+                  entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                data:
+                  temperature: 61
+                action: climate.set_temperature
+            else:
+              - if:
+                  - condition: state
+                    entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                    state: cool
+                then:
+                  - target:
+                      entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                    data:
+                      temperature: 78
+                    action: climate.set_temperature
+                else:
+                  - stop: HVAC not in heat/cool; no eco change.
+      - conditions:
+          - condition: trigger
+            id: motion_on
+        sequence:
+          - if:
+              - condition: state
+                entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                state: heat
+            then:
+              - target:
+                  entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                data:
+                  temperature: 66
+                action: climate.set_temperature
+            else:
+              - if:
+                  - condition: state
+                    entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                    state: cool
+                then:
+                  - target:
+                      entity_id: climate.air_conditioner_fa07fa_air_conditioner
+                    data:
+                      temperature: 74
+                    action: climate.set_temperature
+                else:
+                  - stop: HVAC not in heat/cool; no occupied-setpoint change.
+mode: single
+max_exceeded: silent
