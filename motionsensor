@@ -1,0 +1,50 @@
+esphome:
+  name: shed-eye
+  friendly_name: Shed eye
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+api:
+  encryption:
+    key: "F3RHyGT4HB/+5z+XTrYZD4VZx18Wm/Te4snyWPS3kXE="
+
+wifi:
+  ssid: "A_WIFI"
+  password: "A_SECURE_PASSWORD"
+  ap:
+    ssid: "shed-eye-fallback"
+
+# Optional: on-board status LED (many ESP32 dev boards use GPIO2)
+# If your board has no LED on GPIO2 or this causes odd behavior, remove this block.
+status_led:
+  pin:
+    number: GPIO2
+    inverted: true
+
+binary_sensor:
+  - platform: gpio
+    name: "Shed Motion"
+    device_class: motion
+    pin:
+      number: GPIO13        # AM312 OUT → ESP32 GPIO13 (D13)
+      mode: INPUT_PULLDOWN
+      inverted: false
+    filters:
+      - delayed_on: 50ms    # ignore tiny spikes
+      - delayed_off: 5s     # keeps motion 'on' briefly to avoid flicker
+
+sensor:
+  - platform: wifi_signal
+    name: "ESP32 WiFi RSSI"
+    update_interval: 60s
+  - platform: uptime
+    name: "ESP32 Uptime"
+
+button:
+  - platform: restart
+    name: "ESP32 Restart"
